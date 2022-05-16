@@ -14,10 +14,11 @@ class CompatLoader2D:
         root_url:    Base dataset URL containing data split shards
         split:       One of {train, test}.
         n_comp:      Number of compositions to use
+        cache_dir:   Cache directory to use
         view_type:   Filter by view type [0: canonical views, 1: random views]
         transform:   Transform to be applied on rendered views
     """
-    def __init__(self, root_url, split, n_comp, view_type=-1, transform=COMPAT_ID):
+    def __init__(self, root_url, split, n_comp, cache_dir=None, view_type=-1, transform=COMPAT_ID):
         if view_type not in [-1, 0, 1]:
             raise RuntimeError("Invalid argument: view_type can only be [-1, 0, 1]")
         if split not in ["train", "test"]:
@@ -48,6 +49,7 @@ class CompatLoader2D:
         self.url = '%s/%s/%s_{0000..%s}.tar' % (root_url, split, split, comp_str)
 
 
+        self.cache_dir = cache_dir
         self.transform = transform
         self.view_type = view_type
 
@@ -61,7 +63,11 @@ class CompatLoader2D:
             num_workers: Number of process workers to use when loading data
         """
         # Instantiating dataset
-        dataset = wds.WebDataset(self.url)
+        if self.cache_dir:
+            dataset = wds.WebDataset(self.url)
+        else:
+            dataset = wds.WebDataset(self.url, cache_dir=self.cache_dir)
+
         if self.view_type != -1:
             view_val = bytes(str(self.view_type), 'utf-8')
             dataset  = dataset.select(lambda x: x["view_type.cls"] == view_val)
