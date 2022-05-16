@@ -6,7 +6,7 @@ import webdataset as wds
 COMPAT_ID = lambda x:x
 
 
-class Compat2DLoader:
+class CompatLoader2D:
     """
     Base class for 2D dataset loaders.
 
@@ -44,8 +44,9 @@ class Compat2DLoader:
             self.shuffle = 0
 
         # Formatting WebDataset base URL
-        comp_str = "%04d" % n_comp
+        comp_str = "%04d" % (n_comp -1)
         self.url = '%s/%s/%s_{0000..%s}.tar' % (root_url, split, split, comp_str)
+
 
         self.transform = transform
         self.view_type = view_type
@@ -70,7 +71,7 @@ class Compat2DLoader:
 
 
 
-class Compat2DShapeLoader(Compat2DLoader):
+class ShapeLoader(CompatLoader2D):
     """
     Shape classification data loader.
     Iterating over 2D renderings of models with a shape category label.
@@ -112,7 +113,7 @@ class Compat2DShapeLoader(Compat2DLoader):
 
 
 
-class Compat2DSegLoader(Compat2DLoader):
+class SegmentationLoader(CompatLoader2D):
     """
     Part segmentation and shape classification data loader.
     Iterating over 2D renderings of models with a shape category label, and a segmentation mask with pixel coding for parts.
@@ -161,3 +162,60 @@ class Compat2DSegLoader(Compat2DLoader):
 
         return loader
 
+
+
+
+class CompositionalLoader(CompatLoader2D):
+    """
+    Dataloader for the full 2D compositional task.
+    Iterating over 2D renderings of models with:
+        - shape category label
+        - segmentation mask with pixel coding for parts
+        - part materials labels
+
+    Args:
+        root_url:        Base dataset URL containing data split shards
+        split:           One of {train, test}.
+        n_comp:          Number of compositions to use
+        view_type:       Filter by view type [0: canonical views, 1: random views]
+        transform:       Transform to be applied on rendered views
+
+        mask_transform:      Transform to apply on segmentation masks
+        code_transform:      Function to apply on segmentation mask labels 
+        part_mat_transform:  Function to apply on part-material labels
+    """
+
+    def __init__(self, root_url, split, n_comp, view_type=-1,
+                       transform      = COMPAT_ID,
+                       mask_transform = COMPAT_ID,
+                       code_transform = COMPAT_ID,
+                       part_mat_transform = COMPAT_ID):
+        super().__init__(root_url, split, n_comp, view_type, transform)
+
+        self.mask_transform = mask_transform
+        self.code_transform = code_transform
+        self.part_mat_transform = part_mat_transform
+
+
+    def make_loader(self, batch_size, num_workers):
+        # Instantiating dataset
+        dataset = (
+            super().make_loader()
+            .decode("torchrgb")
+            .to_tuple("render.png", "target.cls", "mask.png", "mask_code.json", "part_materials.json")
+            .map_tuple(self.transform, COMPAT_ID, self.mask_transform, self.code_transform, self.part_mat_transform)
+            .batched(batch_size, partial=False)
+        )
+
+        # Instantiating loader
+        loader = wds.WebLoader(
+            dataset,
+            batch_size=None,
+            shuffle=False,
+            num_workers=num_workers,
+        )
+
+        # Defining loader length
+        loader.length = self.dataset_size // batch_size
+
+        return loader
