@@ -83,15 +83,11 @@ class ShapeLoader(CompatLoader2D):
     Iterating over 2D renderings of models with a shape category label.
 
     Args:
-        root_url:    Base dataset URL containing data split shards
-        split:       One of {train, test}.
-        n_comp:      Number of compositions to use
-        transform:   Transform to be applied on rendered views
-        view_type:   Filter by view type [0: canonical views, 1: random views]
+        -> CompatLoader2D
     """
 
-    def __init__(self, root_url, split, n_comp, transform=COMPAT_ID, view_type=-1):
-        super().__init__(root_url, split, n_comp, view_type, transform)
+    def __init__(self, root_url, split, n_comp, cache_dir=None, view_type=-1, transform=COMPAT_ID):
+        super().__init__(root_url, split, n_comp, cache_dir, view_type, transform)
 
 
     def make_loader(self, batch_size, num_workers):
@@ -125,21 +121,16 @@ class SegmentationLoader(CompatLoader2D):
     Iterating over 2D renderings of models with a shape category label, and a segmentation mask with pixel coding for parts.
 
     Args:
-        root_url:        Base dataset URL containing data split shards
-        split:           One of {train, test}.
-        n_comp:          Number of compositions to use
-        view_type:       Filter by view type [0: canonical views, 1: random views]
-        transform:       Transform to be applied on rendered views
+        -> CompatLoader2D
 
         mask_transform:  Transform to apply on segmentation masks
         code_transform:  Function to apply on segmentation mask labels 
     """
 
-    def __init__(self, root_url, split, n_comp, view_type=-1,
-                       transform      = COMPAT_ID,
-                       mask_transform = COMPAT_ID,
-                       code_transform = COMPAT_ID):
-        super().__init__(root_url, split, n_comp, view_type, transform)
+    def __init__(self, root_url, split, n_comp, cache_dir=None, view_type=-1,
+                    transform=COMPAT_ID, mask_transform = COMPAT_ID,
+                    code_transform = COMPAT_ID):
+        super().__init__(root_url, split, n_comp, cache_dir, view_type, transform)
 
         self.mask_transform = mask_transform
         self.code_transform = code_transform
@@ -180,23 +171,17 @@ class CompositionalLoader(CompatLoader2D):
         - part materials labels
 
     Args:
-        root_url:        Base dataset URL containing data split shards
-        split:           One of {train, test}.
-        n_comp:          Number of compositions to use
-        view_type:       Filter by view type [0: canonical views, 1: random views]
-        transform:       Transform to be applied on rendered views
+        -> CompatLoader2D
 
         mask_transform:      Transform to apply on segmentation masks
         code_transform:      Function to apply on segmentation mask labels 
         part_mat_transform:  Function to apply on part-material labels
     """
 
-    def __init__(self, root_url, split, n_comp, view_type=-1,
-                       transform      = COMPAT_ID,
-                       mask_transform = COMPAT_ID,
-                       code_transform = COMPAT_ID,
-                       part_mat_transform = COMPAT_ID):
-        super().__init__(root_url, split, n_comp, view_type, transform)
+    def __init__(self, root_url, split, n_comp, cache_dir=None, view_type=-1,
+                    transform=COMPAT_ID, mask_transform = COMPAT_ID,
+                    code_transform = COMPAT_ID, part_mat_transform = COMPAT_ID):
+        super().__init__(root_url, split, n_comp, cache_dir, view_type, transform)
 
         self.mask_transform = mask_transform
         self.code_transform = code_transform
